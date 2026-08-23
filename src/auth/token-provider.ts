@@ -1,8 +1,8 @@
-import type { Config, Token } from '../config/schema.js'
-import type { JsonFileStore } from '../config/store.js'
-import { AuthError } from '../lib/errors.js'
-import type { TokenProvider } from '../ports/token.js'
-import { exchangeToken } from './oauth.js'
+import type { Config, Token } from '@/config/schema.ts'
+import type { JsonFileStore } from '@/config/store.ts'
+import { AuthError } from '@/lib/errors.ts'
+import type { TokenProvider } from '@/ports/token.ts'
+import { exchangeToken } from './oauth.ts'
 
 export class TokenProviderImpl implements TokenProvider {
   private token: Token | undefined
@@ -28,16 +28,22 @@ export class TokenProviderImpl implements TokenProvider {
 
   async refresh(signal?: AbortSignal): Promise<Token> {
     if (this.refreshInFlight) return this.refreshInFlight
-    this.refreshInFlight = this.doRefresh(signal).finally(() => {
+    const inFlight = this.doRefresh(signal)
+    this.refreshInFlight = inFlight
+    try {
+      return await inFlight
+    } finally {
+      // Clearing only after settlement is what makes concurrent callers share
+      // one refresh; clearing inside .finally() would race the assignment.
       this.refreshInFlight = null
-    })
-    return this.refreshInFlight
+    }
   }
 
   private async doRefresh(signal?: AbortSignal): Promise<Token> {
     if (this.token === undefined) throw new AuthError('Not logged in. Run: ani2mal login')
-    if (this.cfg.mal.clientId === undefined)
+    if (this.cfg.mal.clientId === undefined) {
       throw new AuthError('mal.clientId is required — run: ani2mal config set mal.clientId=...')
+    }
     const params: Record<string, string> & {
       grant_type: 'refresh_token'
       refresh_token: string

@@ -1,87 +1,53 @@
-import { describe, expect, it, vi } from 'vitest'
-import { createLogger } from '../../src/lib/logger.js'
-import { watchLoop } from '../../src/usecases/watch.js'
-import { fakeFormattedLists } from '../helpers/factories.js'
+import { describe, expect, it } from '../helpers/testkit.ts'
+import type { MalId } from '@/domain/media.ts'
+import { createLogger } from '@/lib/logger.ts'
+import { watchLoop } from '@/usecases/watch.ts'
+import { fakeFn } from '../helpers/fakes.ts'
+import { fakeFormattedLists } from '../helpers/factories.ts'
 
 const logger = createLogger({ json: false, quiet: true, verbose: false })
 
+function makeDeps(intervalMs: number, signal: AbortSignal) {
+  const fmt = fakeFormattedLists([], [])
+  const anilist = { getLists: fakeFn(() => Promise.resolve(fmt)) } as never
+  const mal = {
+    getLists: fakeFn(() => Promise.resolve({ anime: [], manga: [] })),
+    updateOne: fakeFn(() => Promise.resolve(undefined)),
+    deleteOne: fakeFn(() => Promise.resolve(undefined)),
+  } as never
+  const opts = {
+    anilistUsername: 'U',
+    prune: false,
+    dryRun: false,
+    concurrency: 5,
+    excludes: new Set<MalId>(),
+    logger,
+    intervalMs,
+  }
+  return { run: () => watchLoop({ anilist, mal }, opts, signal), anilist }
+}
+
 describe('watchLoop', () => {
   it('interval 0 runs exactly once', async () => {
-    const fmt = fakeFormattedLists([], [])
-    const anilist = { getLists: vi.fn().mockResolvedValue(fmt) } as never
-    const mal = {
-      getLists: vi.fn().mockResolvedValue({ anime: [], manga: [] }),
-      updateOne: vi.fn().mockResolvedValue(undefined),
-      deleteOne: vi.fn().mockResolvedValue(undefined),
-    } as never
-    const signal = new AbortController().signal
-    await watchLoop(
-      { anilist, mal },
-      {
-        anilistUsername: 'U',
-        prune: false,
-        dryRun: false,
-        concurrency: 5,
-        excludes: new Set(),
-        logger,
-        intervalMs: 0,
-      },
-      signal,
-    )
-    expect(anilist.getLists).toHaveBeenCalledTimes(1)
+    const { run, anilist } = makeDeps(0, new AbortController().signal)
+    await run()
+    expect((anilist as { getLists: { calls: unknown[][] } }).getLists.calls).toHaveLength(1)
   })
+
   it('pre-aborted signal does zero iterations', async () => {
-    const fmt = fakeFormattedLists([], [])
-    const anilist = { getLists: vi.fn().mockResolvedValue(fmt) } as never
-    const mal = {
-      getLists: vi.fn().mockResolvedValue({ anime: [], manga: [] }),
-      updateOne: vi.fn().mockResolvedValue(undefined),
-      deleteOne: vi.fn().mockResolvedValue(undefined),
-    } as never
     const c = new AbortController()
     c.abort()
-    await expect(
-      watchLoop(
-        { anilist, mal },
-        {
-          anilistUsername: 'U',
-          prune: false,
-          dryRun: false,
-          concurrency: 5,
-          excludes: new Set(),
-          logger,
-          intervalMs: 1000,
-        },
-        c.signal,
-      ),
-    ).rejects.toThrow()
-    expect(anilist.getLists).not.toHaveBeenCalled()
+    const { run, anilist } = makeDeps(1000, c.signal)
+    await expect(run()).rejects.toThrow()
+    expect((anilist as { getLists: { calls: unknown[][] } }).getLists.calls).toHaveLength(0)
   })
+
   it('abort during sleep resolves before next tick', async () => {
-    const fmt = fakeFormattedLists([], [])
-    const anilist = { getLists: vi.fn().mockResolvedValue(fmt) } as never
-    const mal = {
-      getLists: vi.fn().mockResolvedValue({ anime: [], manga: [] }),
-      updateOne: vi.fn().mockResolvedValue(undefined),
-      deleteOne: vi.fn().mockResolvedValue(undefined),
-    } as never
     const c = new AbortController()
-    const p = watchLoop(
-      { anilist, mal },
-      {
-        anilistUsername: 'U',
-        prune: false,
-        dryRun: false,
-        concurrency: 5,
-        excludes: new Set(),
-        logger,
-        intervalMs: 5000,
-      },
-      c.signal,
-    )
-    // after first tick, it will sleep 5000ms; abort after 20ms
+    const { run, anilist } = makeDeps(5000, c.signal)
+    // after the first tick it sleeps for 5s; aborting after 20ms ends the loop
     setTimeout(() => c.abort(), 20)
-    await p
-    expect(anilist.getLists).toHaveBeenCalledTimes(1)
+    await run()
+    expect((anilist as { getLists: { calls: unknown[][] } }).getLists.calls).toHaveLength(1)
   })
 })

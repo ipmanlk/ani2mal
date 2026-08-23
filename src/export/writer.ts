@@ -1,6 +1,6 @@
 import { access, mkdir, rename, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { CliError } from '../lib/errors.js'
+import { CliError } from '@/lib/errors.ts'
 
 async function atomicWrite(file: string, content: string): Promise<void> {
   const tmp = `${file}.tmp.${process.pid}`

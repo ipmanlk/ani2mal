@@ -1,16 +1,10 @@
-import type { Media } from '../../domain/media.js'
-import {
-  ApiError,
-  AuthError,
-  NetworkError,
-  NotFoundError,
-  RateLimitError,
-} from '../../lib/errors.js'
-import { abortableDelay, requestSignal, rethrowAbort } from '../../lib/signal.js'
-import type { MalPort } from '../../ports/mal.js'
-import type { TokenProvider } from '../../ports/token.js'
-import { type MalDatum, malUpdateBody, mapMalDatum } from './mapper.js'
-import { paginate } from './pagination.js'
+import type { Media } from '@/domain/media.ts'
+import { ApiError, AuthError, NetworkError, NotFoundError, RateLimitError } from '@/lib/errors.ts'
+import { abortableDelay, requestSignal, rethrowAbort } from '@/lib/signal.ts'
+import type { MalPort } from '@/ports/mal.ts'
+import type { TokenProvider } from '@/ports/token.ts'
+import { type MalDatum, malUpdateBody, mapMalDatum } from './mapper.ts'
+import { paginate } from './pagination.ts'
 
 export class MalClient implements MalPort {
   #fetchImpl: typeof fetch
@@ -124,8 +118,7 @@ export class MalClient implements MalPort {
         lastError = err
         const retryAfterMs = err instanceof RateLimitError ? err.retryAfterMs : undefined
         const serverStatus = err instanceof NetworkError ? err.status : undefined
-        const retryable =
-          attempt < 2 &&
+        const retryable = attempt < 2 &&
           (retryAfterMs !== undefined || (serverStatus !== undefined && serverStatus >= 500))
         if (!retryable) throw err
         const backoff = retryAfterMs ?? 1000 * 2 ** attempt + Math.random() * 200
@@ -186,7 +179,9 @@ export class MalClient implements MalPort {
 
     if (res.status === 404 || res.status === 400) {
       throw new NotFoundError(
-        `${await malErrorMessage(res)} — Run: ani2mal exclude add <id> if this entry no longer exists`,
+        `${await malErrorMessage(
+          res,
+        )} — Run: ani2mal exclude add <id> if this entry no longer exists`,
       )
     }
 

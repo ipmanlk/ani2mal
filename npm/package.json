@@ -1,0 +1,37 @@
+{
+  "name": "ani2mal",
+  "version": "4.0.0",
+  "description": "Keep MyAnimeList in sync with what you watch and read on AniList.",
+  "license": "MIT",
+  "bin": {
+    "ani2mal": "bin/ani2mal.js"
+  },
+  "files": [
+    "bin/",
+    "scripts/",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "postinstall": "node scripts/install.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "anilist",
+    "myanimelist",
+    "anime",
+    "manga",
+    "sync",
+    "cli"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ipmanlk/ani2mal.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ipmanlk/ani2mal/issues"
+  },
+  "homepage": "https://github.com/ipmanlk/ani2mal#readme"
+}

@@ -1,9 +1,9 @@
-import { type DiffResult, diffLists } from '../domain/diff.js'
-import type { MalId, Media, MediaType } from '../domain/media.js'
-import { errorMessage } from '../lib/errors.js'
-import type { Logger } from '../lib/logger.js'
-import type { AnilistPort } from '../ports/anilist.js'
-import type { MalPort } from '../ports/mal.js'
+import { diffLists, type DiffResult } from '@/domain/diff.ts'
+import type { MalId, Media, MediaType } from '@/domain/media.ts'
+import { errorMessage } from '@/lib/errors.ts'
+import type { Logger } from '@/lib/logger.ts'
+import type { AnilistPort } from '@/ports/anilist.ts'
+import type { MalPort } from '@/ports/mal.ts'
 
 export interface SyncOptions {
   anilistUsername: string
@@ -87,6 +87,9 @@ export async function syncOnce(
       }
       applied.push({ id: w.media.id, type: w.media.type, action: w.action })
     } catch (err) {
+      // A Ctrl-C abort is a cancel of the whole run, not a per-item failure;
+      // rethrow so the caller sees CancelledError and exits 0.
+      if (parentSignal?.aborted) throw err
       failed.push({ id: w.media.id, message: errorMessage(err) })
       opts.logger.warn(`✖ ${w.media.id}: ${errorMessage(err)}`)
     }

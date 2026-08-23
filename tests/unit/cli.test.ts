@@ -1,42 +1,114 @@
-import { describe, expect, it } from 'vitest'
-import { createProgram } from '../../src/cli/program.js'
-import { resolveConfigDir } from '../../src/config/paths.js'
-import { createLogger } from '../../src/lib/logger.js'
+import { describe, expect, it } from '../helpers/testkit.ts'
+import { resolveConfigDir } from '@/config/paths.ts'
+import { createLogger } from '@/lib/logger.ts'
+import { createProgram } from '@/cli/program.ts'
+// Assert against the same file the binary reads so the test cannot drift
+// from the version the release pipeline stamps.
+import version from '@/version.json' with { type: 'json' }
+
+// Swaps process.stdout.write for a collector so help/version output can be
+// asserted without spawning anything.
+async function captureStdout(fn: () => Promise<unknown>): Promise<string> {
+  const chunks: string[] = []
+  const stream = process.stdout as unknown as { write: (...a: unknown[]) => boolean }
+  const original = stream.write
+  stream.write = (...a: unknown[]) => {
+    chunks.push(String(a[0]))
+    return true
+  }
+  try {
+    await fn()
+  } finally {
+    stream.write = original
+  }
+  return chunks.join('')
+}
 
 function makeProgram() {
   const logger = createLogger({ json: false, quiet: true, verbose: false })
   const dir = resolveConfigDir('/tmp/test-cli')
-  return createProgram({ logger, dir })
+  return createProgram({ logger, dir, signal: new AbortController().signal })
 }
 
 describe('CLI program', () => {
-  it('every command --help renders', async () => {
-    const prog = makeProgram()
-    const cmds = prog.commands.map((c) => c.name())
-    expect(cmds).toEqual(
-      expect.arrayContaining(['config', 'login', 'logout', 'export', 'sync', 'watch', 'exclude']),
-    )
-    const sync = prog.commands.find((c) => c.name() === 'sync')
-    expect(sync).toBeDefined()
-    const optNames = (sync as NonNullable<typeof sync>).options.map((o) => o.long)
-    expect(optNames).toEqual(expect.arrayContaining(['--prune', '--dry-run', '--only', '--limit']))
+  it('root --help lists every command', async () => {
+    const out = await captureStdout(() => makeProgram().run(['--help']))
+    for (const name of ['config', 'login', 'logout', 'export', 'sync', 'watch', 'exclude']) {
+      expect(out).toContain(name)
+    }
+    expect(out).toMatch(/Usage:/)
   })
-  it('legacy flags are unknown options', async () => {
-    for (const flag of ['--set-user', '--set-client', '--export', '--sync', '--watch', '--login']) {
-      const p = makeProgram()
-      await expect(p.parseAsync([flag], { from: 'user' })).rejects.toThrow(/unknown option/)
+
+  it('every command --help renders a usage line', async () => {
+    for (const name of ['config', 'login', 'logout', 'export', 'sync', 'watch', 'exclude']) {
+      const out = await captureStdout(() => makeProgram().run([name, '--help']))
+      expect(out).toContain(`Usage: ani2mal ${name}`)
     }
   })
-  it('--non-interactive blocks prompts (program opts)', async () => {
-    const prog = makeProgram()
-    await prog.parseAsync(['--non-interactive', 'config', 'path'], { from: 'user' })
-    expect(prog.opts().nonInteractive).toBe(true)
+
+  it('subcommand help renders the full path', async () => {
+    const out = await captureStdout(() => makeProgram().run(['config', 'get', '--help']))
+    expect(out).toContain('Usage: ani2mal config get')
+    const viaHelp = await captureStdout(() => makeProgram().run(['help', 'config', 'get']))
+    expect(viaHelp).toContain('Usage: ani2mal config get')
   })
-  it('config get/set/path subcommands exist', async () => {
-    const prog = makeProgram()
-    const cfg = prog.commands.find((c) => c.name() === 'config')
-    expect(cfg).toBeDefined()
-    const subNames = (cfg as NonNullable<typeof cfg>).commands.map((c) => c.name())
-    expect(subNames).toEqual(expect.arrayContaining(['get', 'set', 'path']))
+
+  it('sync --help shows its flags', async () => {
+    const out = await captureStdout(() => makeProgram().run(['sync', '--help']))
+    expect(out).toContain('--prune')
+    expect(out).toContain('--dry-run')
+    expect(out).toContain('--only')
+    expect(out).toContain('--limit')
+  })
+
+  it('--version prints the version', async () => {
+    const out = await captureStdout(() => makeProgram().run(['--version']))
+    expect(out.trim()).toBe(version.version)
+  })
+
+  it('legacy flags are rejected as unknown options', async () => {
+    for (const flag of ['--set-user', '--set-client', '--export', '--sync', '--watch', '--login']) {
+      await expect(makeProgram().run([flag])).rejects.toThrow(/unknown option/)
+    }
+  })
+
+  it('unknown option on a subcommand is rejected', async () => {
+    await expect(makeProgram().run(['sync', '--bogus'])).rejects.toThrow(/unknown option/)
+  })
+
+  it('unknown command exits with a clear error', async () => {
+    await expect(makeProgram().run(['bogus'])).rejects.toThrow(/unknown command/)
+  })
+
+  it('missing required arguments are reported', async () => {
+    await expect(makeProgram().run(['exclude', 'add'])).rejects.toThrow(
+      /missing required argument/,
+    )
+    await expect(makeProgram().run(['config', 'set'])).rejects.toThrow(
+      /missing required argument/,
+    )
+  })
+
+  it('unknown subcommand under config lists the valid ones', async () => {
+    await expect(makeProgram().run(['config', 'bogus'])).rejects.toThrow(/unknown subcommand/)
+  })
+
+  it('--non-interactive lands in the parsed globals', () => {
+    const program = makeProgram()
+    const { globals } = program.parse(['--non-interactive', 'config', 'path'])
+    expect(globals.nonInteractive).toBe(true)
+  })
+
+  it('global flags are stripped before routing', () => {
+    const program = makeProgram()
+    const { rest } = program.parse(['--json', '--quiet', 'sync', '--dry-run'])
+    expect(rest).toEqual(['sync', '--dry-run'])
+  })
+
+  it('--config-dir consumes its value', () => {
+    const program = makeProgram()
+    const { globals, rest } = program.parse(['--config-dir', '/tmp/x', 'config', 'path'])
+    expect(globals.configDir).toBe('/tmp/x')
+    expect(rest).toEqual(['config', 'path'])
   })
 })

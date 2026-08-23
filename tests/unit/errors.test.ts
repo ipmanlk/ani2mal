@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from '../helpers/testkit.ts'
 import {
   ApiError,
   AuthError,
@@ -8,7 +8,7 @@ import {
   NetworkError,
   TimeoutReachedError,
   toExitCode,
-} from '../../src/lib/errors.js'
+} from '@/lib/errors.ts'
 
 describe('toExitCode', () => {
   it('maps correctly', () => {

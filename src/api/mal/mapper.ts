@@ -1,12 +1,12 @@
 import {
   MAL_TO_ANI,
+  malId,
   type MalStatus,
   type Media,
   type MediaType,
-  malId,
   scoreOf,
   toMalStatus,
-} from '../../domain/media.js'
+} from '@/domain/media.ts'
 
 interface MalListStatus {
   status: MalStatus
@@ -26,13 +26,18 @@ export interface MalDatum {
 
 export function mapMalDatum(datum: MalDatum, type: MediaType): Media {
   const ls = datum.list_status
+  // MAL only ever returns the statuses in MAL_TO_ANI, but fail loudly if
+  // that ever changes instead of writing undefined into a list entry.
   const status = MAL_TO_ANI[ls.status]
+  if (status === undefined) {
+    throw new Error(`unknown MAL list status "${ls.status}" for ${datum.node.id}`)
+  }
   const score = scoreOf(ls.score ?? 0)
   const progress = type === 'anime' ? (ls.num_episodes_watched ?? 0) : (ls.num_chapters_read ?? 0)
-  const repeatCount = (ls.num_times_rewatched ?? ls.num_times_reread ?? 0) as number
-  const repeat = repeatCount > 0 ? repeatCount : ls.is_rewatching || ls.is_rereading ? 1 : 0
-  const length =
-    type === 'anime' ? (datum.node.num_episodes ?? null) : (datum.node.num_chapters ?? null)
+  const repeat = ls.num_times_rewatched ?? ls.num_times_reread ?? 0
+  const length = type === 'anime'
+    ? (datum.node.num_episodes ?? null)
+    : (datum.node.num_chapters ?? null)
 
   const base = {
     id: malId(datum.node.id),
@@ -53,12 +58,11 @@ export function malUpdateBody(media: Media): string {
     status,
     score: String(media.score),
   }
+  // MAL keeps its own rewatch flags; AniList has nothing to mirror them from.
   if (media.type === 'anime') {
     params.num_watched_episodes = String(media.progress)
-    params.is_rewatching = String(media.repeat > 0)
   } else {
     params.num_chapters_read = String(media.progress)
-    params.is_rereading = String(media.repeat > 0)
   }
   return new URLSearchParams(params).toString()
 }

@@ -1,4 +1,4 @@
-import type { FormattedLists, MalId, Media } from './media.js'
+import type { FormattedLists, MalId, Media } from './media.ts'
 
 export interface DiffResult {
   anime: { update: Media[]; delete: Media[] }

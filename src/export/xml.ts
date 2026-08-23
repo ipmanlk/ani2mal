@@ -1,5 +1,5 @@
-import type { AnimeMedia, AniStatus, FormattedMediaList, MangaMedia } from '../domain/media.js'
-import { computeStats } from '../domain/media.js'
+import type { AnimeMedia, AniStatus, FormattedMediaList, MangaMedia } from '@/domain/media.ts'
+import { computeStats } from '@/domain/media.ts'
 
 const EXPORT_STATUS_ANIME: Record<AniStatus, string> = {
   planning: 'Plan to Watch',
@@ -33,24 +33,23 @@ function el(name: string, value: string | number): string {
 
 function myinfo(kind: 'anime' | 'manga', userName: string, list: FormattedMediaList): string[] {
   const stats = computeStats(list.list)
-  const counters: Array<[string, number]> =
-    kind === 'anime'
-      ? [
-          ['user_total_anime', stats.total],
-          ['user_total_watching', stats.current],
-          ['user_total_completed', stats.completed],
-          ['user_total_onhold', stats.paused],
-          ['user_total_dropped', stats.dropped],
-          ['user_total_plantowatch', stats.planning],
-        ]
-      : [
-          ['user_total_manga', stats.total],
-          ['user_total_reading', stats.current],
-          ['user_total_completed', stats.completed],
-          ['user_total_onhold', stats.paused],
-          ['user_total_dropped', stats.dropped],
-          ['user_total_plantoread', stats.planning],
-        ]
+  const counters: Array<[string, number]> = kind === 'anime'
+    ? [
+      ['user_total_anime', stats.total],
+      ['user_total_watching', stats.current],
+      ['user_total_completed', stats.completed],
+      ['user_total_onhold', stats.paused],
+      ['user_total_dropped', stats.dropped],
+      ['user_total_plantowatch', stats.planning],
+    ]
+    : [
+      ['user_total_manga', stats.total],
+      ['user_total_reading', stats.current],
+      ['user_total_completed', stats.completed],
+      ['user_total_onhold', stats.paused],
+      ['user_total_dropped', stats.dropped],
+      ['user_total_plantoread', stats.planning],
+    ]
   return [
     '  <myinfo>',
     el('user_id', 0),

@@ -1,32 +1,33 @@
 name: ci
+
 on:
   push: {}
   pull_request: {}
   workflow_dispatch: {}
+
 jobs:
   ci:
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        node: [22, 24]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v6
-      - uses: jdx/mise-action@v4
-        with: { version: latest }
-      - run: mise trust
-      - run: mise install
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm lint
-      - run: pnpm typecheck
-      - run: |
+      - uses: actions/checkout@v7.0.1
+      - uses: denoland/setup-deno@v2.0.5
+        with:
+          deno-version: v2.x
+          # Caches the Deno deps dir, keyed on a hash of deno.lock.
+          cache: true
+      - run: deno install --frozen
+      - run: deno task lint
+      - run: deno task fmt:check
+      - run: deno task check
+      - name: Domain purity
+        run: |
           if grep -R -E "from ['\"]node:|import.*node:" src/domain; then echo "✖ domain imports node:"; exit 1; fi
           echo "✓ domain purity ok"
-      - run: pnpm test
-      - run: pnpm build
-      - run: node dist/cli.js --version
-      - run: node dist/cli.js --help
-      - if: matrix.os == 'ubuntu-latest'
-        run: npm pack --dry-run 2>&1 | grep -q "dist/cli.js" && echo "✓ npm pack contains dist"
-      - if: matrix.os == 'ubuntu-latest'
-        run: ANI2MAL_CONFIG_DIR=/tmp/ci-test node dist/cli.js sync --dry-run 2>&1 | grep -q "anilist.username"
+      - run: deno task test:coverage
+      - run: deno task compile
+      - run: ./dist/ani2mal --version
+      - run: ./dist/ani2mal --help
+      - name: No-token dry-run stays actionable
+        run: ANI2MAL_CONFIG_DIR=/tmp/ci-test ./dist/ani2mal sync --dry-run 2>&1 | grep -q "anilist.username"

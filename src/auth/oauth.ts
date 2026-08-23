@@ -1,7 +1,8 @@
-import type { Token } from '../config/schema.js'
-import { TokenSchema } from '../config/schema.js'
-import { AuthError, NetworkError } from '../lib/errors.js'
-import { requestSignal, rethrowAbort } from '../lib/signal.js'
+import type { Token } from '@/config/schema.ts'
+import { TokenSchema } from '@/config/schema.ts'
+import { AuthError, NetworkError } from '@/lib/errors.ts'
+import { requestSignal, rethrowAbort } from '@/lib/signal.ts'
+import * as v from 'valibot'
 
 export interface ExchangeParams {
   grant_type: 'authorization_code' | 'refresh_token'
@@ -44,12 +45,11 @@ export async function exchangeToken(
   const json = (await res.json().catch(() => ({}))) as Record<string, unknown>
 
   if (!res.ok) {
-    const msg =
-      typeof json.error === 'string'
-        ? json.error
-        : typeof json.message === 'string'
-          ? json.message
-          : `Token exchange failed (${res.status})`
+    const msg = typeof json.error === 'string'
+      ? json.error
+      : typeof json.message === 'string'
+      ? json.message
+      : `Token exchange failed (${res.status})`
     if (res.status === 400 || res.status === 401) {
       throw new AuthError(msg)
     }
@@ -64,11 +64,11 @@ export async function exchangeToken(
     expires_at: new Date(Date.now() + expiresIn * 1000).toISOString(),
   }
 
-  const parsed = TokenSchema.safeParse(tokenRaw)
+  const parsed = v.safeParse(TokenSchema, tokenRaw)
   if (!parsed.success) {
     throw new AuthError(
-      `MAL returned an invalid token response (${parsed.error.issues[0]?.message})`,
+      `MAL returned an invalid token response (${parsed.issues[0]?.message})`,
     )
   }
-  return parsed.data
+  return parsed.output
 }

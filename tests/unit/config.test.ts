@@ -1,44 +1,68 @@
 import { mkdtemp, rm, stat } from 'node:fs/promises'
 import os, { tmpdir } from 'node:os'
 import path from 'node:path'
-import { afterEach, describe, expect, it } from 'vitest'
-import { resolveConfigDir } from '../../src/config/paths.js'
-import { ConfigSchema, ExcludesSchema } from '../../src/config/schema.js'
-import { JsonFileStore } from '../../src/config/store.js'
+import { describe, expect, it } from '../helpers/testkit.ts'
+import { resolveConfigDir } from '@/config/paths.ts'
+import { ConfigSchema, ExcludesSchema } from '@/config/schema.ts'
+import { JsonFileStore } from '@/config/store.ts'
+
+// These tests mutate process.env and process.platform; every case restores
+// both when it finishes.
+function withCleanEnv(fn: () => void): () => void {
+  return () => {
+    const origEnv = { ...process.env }
+    const origPlatform = process.platform
+    try {
+      fn()
+    } finally {
+      process.env = { ...origEnv }
+      Object.defineProperty(process, 'platform', { value: origPlatform })
+    }
+  }
+}
 
 describe('resolveConfigDir', () => {
-  const origEnv = { ...process.env }
-  const origPlatform = process.platform
-  afterEach(() => {
-    process.env = { ...origEnv }
-    Object.defineProperty(process, 'platform', { value: origPlatform })
-  })
-  it('--config-dir wins', () => {
-    expect(resolveConfigDir('/tmp/custom')).toBe(path.resolve('/tmp/custom'))
-  })
-  it('ANI2MAL_CONFIG_DIR env', () => {
-    process.env.ANI2MAL_CONFIG_DIR = '/tmp/envdir'
-    expect(resolveConfigDir(undefined)).toBe(path.resolve('/tmp/envdir'))
-  })
-  it('XDG_CONFIG_HOME', () => {
-    delete process.env.ANI2MAL_CONFIG_DIR
-    process.env.XDG_CONFIG_HOME = '/custom'
-    expect(resolveConfigDir(undefined)).toBe(path.join('/custom', 'ani2mal'))
-  })
-  it('darwin default', () => {
-    delete process.env.ANI2MAL_CONFIG_DIR
-    delete process.env.XDG_CONFIG_HOME
-    Object.defineProperty(process, 'platform', { value: 'darwin' })
-    expect(resolveConfigDir(undefined)).toBe(
-      path.join(os.homedir(), 'Library', 'Application Support', 'ani2mal'),
-    )
-  })
-  it('linux default', () => {
-    delete process.env.ANI2MAL_CONFIG_DIR
-    delete process.env.XDG_CONFIG_HOME
-    Object.defineProperty(process, 'platform', { value: 'linux' })
-    expect(resolveConfigDir(undefined)).toBe(path.join(os.homedir(), '.config', 'ani2mal'))
-  })
+  it(
+    '--config-dir wins',
+    withCleanEnv(() => {
+      expect(resolveConfigDir('/tmp/custom')).toBe(path.resolve('/tmp/custom'))
+    }),
+  )
+  it(
+    'ANI2MAL_CONFIG_DIR env',
+    withCleanEnv(() => {
+      process.env.ANI2MAL_CONFIG_DIR = '/tmp/envdir'
+      expect(resolveConfigDir(undefined)).toBe(path.resolve('/tmp/envdir'))
+    }),
+  )
+  it(
+    'XDG_CONFIG_HOME',
+    withCleanEnv(() => {
+      delete process.env.ANI2MAL_CONFIG_DIR
+      process.env.XDG_CONFIG_HOME = '/custom'
+      expect(resolveConfigDir(undefined)).toBe(path.join('/custom', 'ani2mal'))
+    }),
+  )
+  it(
+    'darwin default',
+    withCleanEnv(() => {
+      delete process.env.ANI2MAL_CONFIG_DIR
+      delete process.env.XDG_CONFIG_HOME
+      Object.defineProperty(process, 'platform', { value: 'darwin' })
+      expect(resolveConfigDir(undefined)).toBe(
+        path.join(os.homedir(), 'Library', 'Application Support', 'ani2mal'),
+      )
+    }),
+  )
+  it(
+    'linux default',
+    withCleanEnv(() => {
+      delete process.env.ANI2MAL_CONFIG_DIR
+      delete process.env.XDG_CONFIG_HOME
+      Object.defineProperty(process, 'platform', { value: 'linux' })
+      expect(resolveConfigDir(undefined)).toBe(path.join(os.homedir(), '.config', 'ani2mal'))
+    }),
+  )
 })
 
 describe('JsonFileStore', () => {

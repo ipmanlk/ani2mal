@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import { diffLists, equalMedia } from '../../src/domain/diff.js'
+import { describe, expect, it } from '../helpers/testkit.ts'
+import { diffLists, equalMedia } from '@/domain/diff.ts'
 import {
   ANI_TO_MAL,
   computeStats,
@@ -7,8 +7,8 @@ import {
   malId,
   scoreOf,
   toMalStatus,
-} from '../../src/domain/media.js'
-import { fakeFormattedLists, makeMedia } from '../helpers/factories.js'
+} from '@/domain/media.ts'
+import { fakeFormattedLists, makeMedia } from '../helpers/factories.ts'
 
 describe('malId', () => {
   it('accepts positive ints', () => {
@@ -56,11 +56,12 @@ describe('status maps', () => {
   it('round-trip MAL_TO_ANI[toMalStatus(s,t)] === s', () => {
     const statuses = ['planning', 'current', 'completed', 'paused', 'dropped'] as const
     const types = ['anime', 'manga'] as const
-    for (const s of statuses)
+    for (const s of statuses) {
       for (const t of types) {
         const mal = toMalStatus(s, t)
         expect(MAL_TO_ANI[mal]).toBe(s)
       }
+    }
   })
   it('ANI_TO_MAL has both anime and manga keys', () => {
     expect(ANI_TO_MAL.anime.planning).toBe('plan_to_watch')
@@ -156,8 +157,7 @@ describe('diffLists', () => {
     const fmt = fakeFormattedLists([a], [])
     const first = mal[0]
     const second = mal[1]
-    expect(first).toBeDefined()
-    expect(second).toBeDefined()
+    if (!first || !second) throw new Error('fixture arrays must not be empty')
     const excludes = new Set([first.id, second.id])
     const res1 = diffLists(fmt, { anime: mal, manga: [] }, { excludes, prune: false })
     expect(res1.anime.update).toHaveLength(0)
@@ -178,13 +178,12 @@ describe('diffLists', () => {
     }
     const first = mal.anime[0]
     const second = mal.anime[1]
-    expect(first).toBeDefined()
-    expect(second).toBeDefined()
+    if (!first || !second) throw new Error('fixture arrays must not be empty')
     const excludes = new Set([first.id])
     const res = diffLists(fmt, mal, { excludes, prune: true })
     expect(res.anime.delete).toHaveLength(1)
     const deleted = res.anime.delete[0]
-    expect(deleted).toBeDefined()
+    if (!deleted) throw new Error('expected one delete')
     expect(deleted.id).toBe(second.id)
   })
 })

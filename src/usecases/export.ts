@@ -1,6 +1,6 @@
-import { writeExports } from '../export/writer.js'
-import { buildAnimeXML, buildMangaXML } from '../export/xml.js'
-import type { AnilistPort } from '../ports/anilist.js'
+import { writeExports } from '@/export/writer.ts'
+import { buildAnimeXML, buildMangaXML } from '@/export/xml.ts'
+import type { AnilistPort } from '@/ports/anilist.ts'
 
 export interface ExportOptions {
   username: string

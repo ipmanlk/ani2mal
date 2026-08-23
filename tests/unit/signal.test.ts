@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest'
-import { CancelledError, TimeoutReachedError } from '../../src/lib/errors.js'
-import { abortableDelay, requestSignal, rethrowAbort } from '../../src/lib/signal.js'
+import { describe, expect, it } from '../helpers/testkit.ts'
+import { CancelledError, TimeoutReachedError } from '@/lib/errors.ts'
+import { abortableDelay, requestSignal, rethrowAbort } from '@/lib/signal.ts'
 
 describe('requestSignal', () => {
   it('pre-aborted parent => composite pre-aborted', () => {

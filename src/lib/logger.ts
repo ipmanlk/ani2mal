@@ -39,8 +39,9 @@ export function createLogger(opts: { json: boolean; quiet: boolean; verbose: boo
       process.stderr.write(`${JSON.stringify(rec)}\n`)
     } else {
       const redacted = fields ? redactForLogs(fields) : undefined
-      const extra =
-        redacted && Object.keys(redacted as object).length > 0 ? ` ${JSON.stringify(redacted)}` : ''
+      const extra = redacted && Object.keys(redacted as object).length > 0
+        ? ` ${JSON.stringify(redacted)}`
+        : ''
       process.stderr.write(`${msg}${extra}\n`)
     }
   }

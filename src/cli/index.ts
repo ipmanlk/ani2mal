@@ -1,16 +1,9 @@
-import { resolveConfigDir } from '../config/paths.js'
-import { CancelledError, CliError, errorMessage, toExitCode } from '../lib/errors.js'
-import { createLogger } from '../lib/logger.js'
-import { createProgram } from './program.js'
+import { resolveConfigDir } from '@/config/paths.ts'
+import { CancelledError, errorMessage, toExitCode } from '@/lib/errors.ts'
+import { createLogger } from '@/lib/logger.ts'
+import { createProgram } from './program.ts'
 
-function checkNodeVersion(): void {
-  const major = Number(process.versions.node.split('.')[0])
-  if (major < 22) {
-    throw new CliError(`ani2mal 3 requires Node >= 22 (found ${process.versions.node})`)
-  }
-}
-
-export async function main(argv: string[] = process.argv): Promise<void> {
+export async function main(argv: string[] = process.argv.slice(2)): Promise<void> {
   const global = parseGlobalArgs(argv)
   const logger = createLogger({ json: global.json, quiet: global.quiet, verbose: global.verbose })
   const dir = resolveConfigDir(global.configDir)
@@ -21,16 +14,12 @@ export async function main(argv: string[] = process.argv): Promise<void> {
   process.once('SIGTERM', interrupt)
 
   try {
-    checkNodeVersion()
+    // The program strips globals again while routing; this pre-pass only
+    // exists so logging and the config dir are ready before any command runs.
     const program = createProgram({ logger, signal: run.signal, dir })
-    await program.parseAsync(argv, { from: 'node' })
+    await program.run(argv)
     process.exitCode = 0
   } catch (err: unknown) {
-    // Commander already prints its own usage errors; we only own the exit code.
-    if (isCommanderError(err)) {
-      process.exitCode = isCommanderHelpOrVersion(err) ? 0 : 2
-      return
-    }
     if (err instanceof CancelledError) {
       process.exitCode = 0
       return
@@ -65,20 +54,4 @@ function parseGlobalArgs(argv: string[]) {
   return { configDir, json, quiet, verbose, nonInteractive }
 }
 
-function isCommanderError(err: unknown): boolean {
-  return err instanceof Error && 'code' in err && String(err.code).startsWith('commander.')
-}
-
-function isCommanderHelpOrVersion(err: unknown): boolean {
-  if (err !== null && typeof err === 'object' && 'code' in err) {
-    const code = (err as { code: string }).code
-    return (
-      code === 'commander.help' ||
-      code === 'commander.helpDisplayed' ||
-      code === 'commander.version'
-    )
-  }
-  return false
-}
-
-await main(process.argv)
+await main()

@@ -1,39 +1,54 @@
-import { Command } from 'commander'
-import type { Logger } from '../lib/logger.js'
-import { registerConfigCommands } from './commands/config.js'
-import { registerExcludeCommands } from './commands/exclude.js'
-import { registerExportCommand } from './commands/export.js'
-import { registerLoginCommand } from './commands/login.js'
-import { registerLogoutCommand } from './commands/logout.js'
-import { registerSyncCommand } from './commands/sync.js'
-import { registerWatchCommand } from './commands/watch.js'
+import type { Logger } from '@/lib/logger.ts'
+import { registerConfigCommands } from './commands/config.ts'
+import { registerExcludeCommands } from './commands/exclude.ts'
+import { registerExportCommand } from './commands/export.ts'
+import { registerLoginCommand } from './commands/login.ts'
+import { registerLogoutCommand } from './commands/logout.ts'
+import { registerSyncCommand } from './commands/sync.ts'
+import { registerWatchCommand } from './commands/watch.ts'
+import { type GlobalFlags, Router } from './router.ts'
+import version from '@/version.json' with { type: 'json' }
 
-export function createProgram(deps: { logger: Logger; signal: AbortSignal; dir: string }): Command {
-  const program = new Command()
-  program
-    .name('ani2mal')
-    .description('AniList → MyAnimeList sync — AniList is the source of truth, MAL is the mirror.')
-    .version('3.0.0')
-    .option('--config-dir <path>', 'Config directory')
-    .option('--json', 'Machine-readable output', false)
-    .option('--quiet', 'Errors only', false)
-    .option('--verbose', 'Debug logs', false)
-    .option('--non-interactive', 'Never prompt', false)
-    .exitOverride()
-    .allowUnknownOption(false)
+export const VERSION = version.version
+
+export interface ProgramDeps {
+  logger: Logger
+  signal: AbortSignal
+  dir: string
+}
+
+export interface Program {
+  parse: (argv: string[]) => ReturnType<Router['parse']>
+  run: (argv: string[]) => Promise<GlobalFlags>
+}
+
+export function createProgram(deps: ProgramDeps): Program {
+  const router = new Router({
+    version: VERSION,
+    description: 'Keep MyAnimeList in sync with what you watch and read on AniList.',
+  })
 
   const getDir = () => deps.dir
   const getLogger = () => deps.logger
   const getSignal = () => deps.signal
-  const isNonInteractive = () => Boolean(program.opts().nonInteractive)
+  // Global flags are only known once the router has split them off, so the
+  // interactive check goes through this little box that run() fills in.
+  const state = { nonInteractive: false }
+  const isNonInteractive = () => state.nonInteractive
 
-  registerConfigCommands(program, getDir)
-  registerLoginCommand(program, getDir, getLogger, isNonInteractive)
-  registerLogoutCommand(program, getDir, getLogger)
-  registerExportCommand(program, getDir, getLogger, getSignal)
-  registerSyncCommand(program, getDir, getLogger, getSignal)
-  registerWatchCommand(program, getDir, getLogger, getSignal)
-  registerExcludeCommands(program, getDir)
+  registerConfigCommands(router, getDir)
+  registerLoginCommand(router, getDir, getLogger, isNonInteractive, getSignal)
+  registerLogoutCommand(router, getDir, getLogger)
+  registerExportCommand(router, getDir, getLogger, getSignal)
+  registerSyncCommand(router, getDir, getLogger, getSignal)
+  registerWatchCommand(router, getDir, getLogger, getSignal)
+  registerExcludeCommands(router, getDir)
 
-  return program
+  return {
+    parse: (argv) => router.parse(argv),
+    run: (argv) =>
+      router.run(argv, (g) => {
+        state.nonInteractive = g.nonInteractive
+      }),
+  }
 }

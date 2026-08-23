@@ -1,18 +1,18 @@
-import type { Command } from 'commander'
-import type { PkceData, Token } from '../../config/schema.js'
-import { PkceSchema, TokenSchema } from '../../config/schema.js'
-import { JsonFileStore } from '../../config/store.js'
-import type { Logger } from '../../lib/logger.js'
+import type { PkceData, Token } from '@/config/schema.ts'
+import { PkceSchema, TokenSchema } from '@/config/schema.ts'
+import { JsonFileStore } from '@/config/store.ts'
+import type { Logger } from '@/lib/logger.ts'
+import type { Router } from '@/cli/router.ts'
 
 export function registerLogoutCommand(
-  program: Command,
+  router: Router,
   getDir: () => string,
   getLogger: () => Logger,
 ): void {
-  program
-    .command('logout')
-    .description('Delete token and PKCE files')
-    .action(async () => {
+  router.add({
+    name: 'logout',
+    description: 'Delete token and PKCE files',
+    run: async () => {
       const dir = getDir()
       const logger = getLogger()
       const tokenStore = new JsonFileStore<Token>(dir, 'mal_token.json', TokenSchema)
@@ -21,5 +21,6 @@ export function registerLogoutCommand(
       await pkceStore.delete()
       logger.info(`Logged out. Config dir: ${dir}`)
       logger.info('Run ani2mal login to reconnect.')
-    })
+    },
+  })
 }

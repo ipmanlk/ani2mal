@@ -1,4 +1,4 @@
-import { ConfigError } from '../lib/errors.js'
+import { ConfigError } from '@/lib/errors.ts'
 
 export function parseInterval(s: string): number {
   if (s === '0') return 0
@@ -17,14 +17,16 @@ export function parseInterval(s: string): number {
 
 export function parseOnly(v: string | undefined): 'anime' | 'manga' | undefined {
   if (v === undefined) return undefined
-  if (v !== 'anime' && v !== 'manga')
+  if (v !== 'anime' && v !== 'manga') {
     throw new ConfigError(`Invalid --only "${v}": expected anime|manga`)
+  }
   return v
 }
 
 export function parseLimit(v: string): number {
   const n = Number(v)
-  if (!Number.isInteger(n) || n < 1 || n > 10)
+  if (!Number.isInteger(n) || n < 1 || n > 10) {
     throw new ConfigError(`Invalid --limit "${v}": expected 1..10`)
+  }
   return n
 }

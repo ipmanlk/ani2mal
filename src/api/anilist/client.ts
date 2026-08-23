@@ -1,9 +1,9 @@
-import type { FormattedLists } from '../../domain/media.js'
-import { ApiError, NetworkError, NotFoundError } from '../../lib/errors.js'
-import { requestSignal, rethrowAbort } from '../../lib/signal.js'
-import type { AnilistPort } from '../../ports/anilist.js'
-import { mapAnilist } from './mapper.js'
-import { MEDIA_LIST_COLLECTION } from './queries.js'
+import type { FormattedLists } from '@/domain/media.ts'
+import { ApiError, NetworkError, NotFoundError } from '@/lib/errors.ts'
+import { requestSignal, rethrowAbort } from '@/lib/signal.ts'
+import type { AnilistPort } from '@/ports/anilist.ts'
+import { mapAnilist } from './mapper.ts'
+import { MEDIA_LIST_COLLECTION } from './queries.ts'
 
 export class AnilistClient implements AnilistPort {
   #fetchImpl: typeof fetch
@@ -54,6 +54,6 @@ export class AnilistClient implements AnilistPort {
     if (!json.data?.MediaListCollection) {
       throw new NotFoundError(`No list for ${userName} (${type}); private or unknown user`)
     }
-    return json.data.MediaListCollection as import('./mapper.js').RawCollection
+    return json.data.MediaListCollection as import('./mapper.ts').RawCollection
   }
 }

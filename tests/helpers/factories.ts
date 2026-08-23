@@ -1,22 +1,25 @@
-import {
-  type AniStatus,
-  type Media,
-  type MediaType,
-  malId,
-  scoreOf,
-} from '../../src/domain/media.js'
+import { type AniStatus, malId, type Media, type MediaType, scoreOf } from '@/domain/media.ts'
 
-export function makeMedia(over: Partial<Media> & { type: MediaType; id: number }): Media {
-  const base = {
+// Builds Media values from plain primitives. The domain type brands id and
+// score, but tests think in raw numbers, so this helper does the branding.
+export function makeMedia(over: {
+  type: MediaType
+  id: number
+  progress?: number
+  score?: number
+  status?: AniStatus
+  repeat?: number
+  length?: number | null
+}): Media {
+  return {
     type: over.type,
     id: malId(over.id),
     progress: over.progress ?? 0,
-    score: over.score !== undefined ? scoreOf(over.score as unknown as number) : scoreOf(0),
-    status: (over.status ?? 'current') as AniStatus,
+    score: scoreOf(over.score ?? 0),
+    status: over.status ?? 'current',
     repeat: over.repeat ?? 0,
     length: over.length ?? null,
   }
-  return base as Media
 }
 
 export function fakeFormattedLists(anime: Media[] = [], manga: Media[] = []) {
@@ -31,6 +34,7 @@ export function fakeFormattedLists(anime: Media[] = [], manga: Media[] = []) {
       dropped: 0,
     },
     skippedNoMalId: 0,
+    skippedUnknownStatus: 0,
   })
   return { anime: mk(anime), manga: mk(manga) }
 }

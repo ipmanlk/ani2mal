@@ -15,9 +15,9 @@ export async function* paginate<T>(
     const next: string | null | undefined = page.paging?.next
     url = next ?? null
     if (url) {
+      // Small breather between pages so we do not hammer the API.
       await new Promise<void>((resolve) => {
-        const t = setTimeout(resolve, 0)
-        t.unref?.()
+        setTimeout(resolve, 0)
       })
     }
   }

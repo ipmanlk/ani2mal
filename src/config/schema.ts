@@ -1,42 +1,49 @@
-import { z } from 'zod'
+import * as v from 'valibot'
 
-export const ConfigSchema = z
-  .object({
-    anilist: z.object({
-      username: z.string().min(1).max(64).optional(),
-    }),
-    mal: z.object({
-      clientId: z
-        .string()
-        .min(8, 'mal.clientId is required and must look like a real client id')
-        .optional(),
-      clientSecret: z.string().optional(),
-    }),
-  })
-  .strict()
+// ISO date-time with optional milliseconds, ending in Z or an offset like +05:30.
+const isoDateTimeOffset = v.pipe(
+  v.string(),
+  v.check(
+    (s) => /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/.test(s),
+    'expected an ISO date-time',
+  ),
+)
 
-export type Config = z.infer<typeof ConfigSchema>
+export const ConfigSchema = v.object({
+  anilist: v.object({
+    username: v.optional(v.pipe(v.string(), v.minLength(1), v.maxLength(64))),
+  }),
+  mal: v.object({
+    clientId: v.optional(
+      v.pipe(
+        v.string(),
+        v.minLength(8, 'mal.clientId is required and must look like a real client id'),
+      ),
+    ),
+    clientSecret: v.optional(v.string()),
+  }),
+})
 
-export const TokenSchema = z
-  .object({
-    access_token: z.string().min(10),
-    refresh_token: z.string().min(10),
-    token_type: z.literal('Bearer'),
-    expires_at: z.string().datetime({ offset: true }),
-  })
-  .strict()
+export type Config = v.InferOutput<typeof ConfigSchema>
 
-export type Token = z.infer<typeof TokenSchema>
+export const TokenSchema = v.object({
+  access_token: v.pipe(v.string(), v.minLength(10)),
+  refresh_token: v.pipe(v.string(), v.minLength(10)),
+  token_type: v.literal('Bearer'),
+  expires_at: isoDateTimeOffset,
+})
 
-export const ExcludesSchema = z.array(z.number().int().positive()).default([])
+export type Token = v.InferOutput<typeof TokenSchema>
 
-export type Excludes = z.infer<typeof ExcludesSchema>
+// A stored excludes.json is always a plain array; callers fall back to an
+// empty list when the file is missing.
+export const ExcludesSchema = v.array(v.pipe(v.number(), v.integer(), v.minValue(1)))
 
-export const PkceSchema = z
-  .object({
-    verifier: z.string().min(43).max(128),
-    createdAt: z.string().datetime({ offset: true }),
-  })
-  .strict()
+export type Excludes = v.InferOutput<typeof ExcludesSchema>
 
-export type PkceData = z.infer<typeof PkceSchema>
+export const PkceSchema = v.object({
+  verifier: v.pipe(v.string(), v.minLength(43), v.maxLength(128)),
+  createdAt: isoDateTimeOffset,
+})
+
+export type PkceData = v.InferOutput<typeof PkceSchema>

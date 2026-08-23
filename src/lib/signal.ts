@@ -1,4 +1,4 @@
-import { TimeoutReachedError } from './errors.js'
+import { TimeoutReachedError } from './errors.ts'
 
 export function requestSignal(parent: AbortSignal | undefined, timeoutMs: number): AbortSignal {
   if (parent) return AbortSignal.any([parent, AbortSignal.timeout(timeoutMs)])
@@ -27,7 +27,6 @@ export function abortableDelay(ms: number, signal?: AbortSignal): Promise<void> 
       return
     }
     const t = setTimeout(resolve, ms)
-    t.unref?.()
     if (signal) {
       signal.addEventListener(
         'abort',

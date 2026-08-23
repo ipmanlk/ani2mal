@@ -2,10 +2,10 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { XMLParser } from 'fast-xml-parser'
-import { describe, expect, it } from 'vitest'
-import { writeExports } from '../../src/export/writer.js'
-import { buildAnimeXML, buildMangaXML } from '../../src/export/xml.js'
-import { fakeFormattedLists, makeMedia } from '../helpers/factories.js'
+import { describe, expect, it } from '../helpers/testkit.ts'
+import { writeExports } from '@/export/writer.ts'
+import { buildAnimeXML, buildMangaXML } from '@/export/xml.ts'
+import { fakeFormattedLists, makeMedia } from '../helpers/factories.ts'
 
 describe('buildAnimeXML', () => {
   it('produces valid XML with header and myinfo', () => {
@@ -70,8 +70,17 @@ describe('buildAnimeXML', () => {
     }
   })
   it('re-parse row count matches myinfo total', () => {
-    const list = Array.from({ length: 5 }, (_, i) =>
-      makeMedia({ type: 'anime', id: i + 1, status: 'current', progress: i, score: 7, repeat: 0 }),
+    const list = Array.from(
+      { length: 5 },
+      (_, i) =>
+        makeMedia({
+          type: 'anime',
+          id: i + 1,
+          status: 'current',
+          progress: i,
+          score: 7,
+          repeat: 0,
+        }),
     )
     const fmt = fakeFormattedLists(list, [])
     const xml = buildAnimeXML(fmt.anime, 'U')

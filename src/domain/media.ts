@@ -5,15 +5,17 @@ export type MalId = number & { readonly __brand: 'MalId' }
 export type Score = number & { readonly __brand: 'Score' }
 
 export function malId(n: number): MalId {
-  if (!Number.isInteger(n) || n <= 0)
+  if (!Number.isInteger(n) || n <= 0) {
     throw new RangeError(`malId(${n}): MAL ids are positive integers`)
+  }
   return n as MalId
 }
 
 export function scoreOf(n: number): Score {
   const r = Math.round(n)
-  if (!Number.isFinite(r) || r < 0 || r > 10)
+  if (!Number.isFinite(r) || r < 0 || r > 10) {
     throw new RangeError(`scoreOf(${n}): scores round into 0..10`)
+  }
   return r as Score
 }
 

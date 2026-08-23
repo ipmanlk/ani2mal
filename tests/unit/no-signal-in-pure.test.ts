@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from '../helpers/testkit.ts'
 
 describe('pure modules have no AbortSignal param', () => {
   it('no exported function in domain or export/xml accepts AbortSignal', () => {

@@ -1,0 +1,99 @@
+name: release
+
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            asset: ani2mal-linux-x64
+            opener: xdg-open
+          - target: aarch64-unknown-linux-gnu
+            asset: ani2mal-linux-arm64
+            opener: xdg-open
+          - target: x86_64-apple-darwin
+            asset: ani2mal-macos-x64
+            opener: open
+          - target: aarch64-apple-darwin
+            asset: ani2mal-macos-arm64
+            opener: open
+          - target: x86_64-pc-windows-msvc
+            asset: ani2mal-windows-x64.exe
+            opener: cmd
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: denoland/setup-deno@v2.0.5
+        with:
+          deno-version: v2.x
+          cache: true
+      # The binary reads its version from src/version.json; stamp it from the
+      # tag so binaries always report the version they were released as.
+      - name: Stamp version from tag
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          node -e "
+            const fs = require('fs');
+            fs.writeFileSync('src/version.json', JSON.stringify({ version: process.argv[1] }, null, 2) + '\n');
+          " "$VERSION"
+      - name: Compile for target
+        run: |
+          deno compile \
+            --target ${{ matrix.target }} \
+            --allow-net=graphql.anilist.co,api.myanimelist.net,myanimelist.net \
+            --allow-env --allow-read --allow-write \
+            --allow-run=${{ matrix.opener }} \
+            --output "dist/${{ matrix.asset }}" \
+            src/cli/index.ts
+      - name: Checksum
+        run: |
+          cd dist
+          sha256sum "${{ matrix.asset }}" > "${{ matrix.asset }}.sha256"
+      - uses: actions/upload-artifact@v7.0.1
+        with:
+          name: ${{ matrix.asset }}
+          path: dist/*
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      # Creates the GitHub release with the attached binaries.
+      contents: write
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/download-artifact@v8.0.1
+        with:
+          path: artifacts
+      - name: Collect assets
+        run: |
+          mkdir -p assets
+          find artifacts -type f -exec mv {} assets/ \;
+          ls -la assets
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" assets/* \
+            --title "$GITHUB_REF_NAME" \
+            --generate-notes
+      - name: Publish npm installer package
+        working-directory: npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            pkg.version = process.argv[1];
+            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+          " "$VERSION"
+          cp ../LICENSE LICENSE
+          npm publish --access public

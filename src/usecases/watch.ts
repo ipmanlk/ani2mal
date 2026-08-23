@@ -1,8 +1,8 @@
-import { abortableDelay } from '../lib/signal.js'
-import type { AnilistPort } from '../ports/anilist.js'
-import type { MalPort } from '../ports/mal.js'
-import type { SyncOptions } from './sync.js'
-import { syncOnce } from './sync.js'
+import { abortableDelay } from '@/lib/signal.ts'
+import type { AnilistPort } from '@/ports/anilist.ts'
+import type { MalPort } from '@/ports/mal.ts'
+import type { SyncOptions } from './sync.ts'
+import { syncOnce } from './sync.ts'
 
 export async function watchLoop(
   deps: { anilist: AnilistPort; mal: MalPort },

@@ -1,4 +1,4 @@
-import type { Token } from '../config/schema.js'
+import type { Token } from '@/config/schema.ts'
 
 export interface TokenProvider {
   getAccessToken(signal?: AbortSignal): Promise<string>

@@ -1,24 +1,49 @@
-# ani2mal — AniList → MyAnimeList Sync
+# ani2mal: AniList to MyAnimeList sync
 
-> AniList is the source of truth, MAL is the mirror.
+> [!IMPORTANT]
+> **AI-Assisted Development:** This project is primarily coded with
+> [Pi Agent](https://pi.dev) and [OpenCode 2](https://opencode.ai/), using the
+> models **DeepSeek V4 Pro 0813**, **GLM 5.2** and **Ox Alpha**.
 
-`ani2mal` mirrors your AniList anime and manga lists to MyAnimeList. One direction, no magic, fully previewable.
+[![ci](https://github.com/ipmanlk/ani2mal/actions/workflows/ci.yml/badge.svg)](https://github.com/ipmanlk/ani2mal/actions/workflows/ci.yml)
+
+> Keep MyAnimeList up to date with what you watch and read on AniList.
+
+ani2mal copies your anime and manga lists from AniList to MyAnimeList: scores,
+progress, statuses and rewatch counts. It writes to MAL only, never the other
+way around, and a dry run shows you every change before anything is saved.
 
 ## Install
 
+Grab a self-contained binary from [GitHub Releases](https://github.com/ipmanlk/ani2mal/releases), no runtime needed:
+
 ```bash
-npm install -g ani2mal
-# or one-shot
-npx ani2mal --help
+# linux x64 example; pick the asset matching your platform
+curl -fsSL -o ani2mal https://github.com/ipmanlk/ani2mal/releases/latest/download/ani2mal-linux-x64
+chmod +x ani2mal && mv ani2mal /usr/local/bin/
 ```
 
-Requires Node 22 or newer (Node 24 LTS recommended).
+Or install through npm, which downloads the same binary for your platform:
+
+```bash
+npm install -g ani2mal
+```
+
+If your package manager blocks install scripts, nothing breaks: the first
+`ani2mal` command fetches the missing binary on the spot, verifies its
+checksum, and runs.
+
+Working on the source? Run it straight from a checkout with [Deno](https://deno.com):
+
+```bash
+deno task run --help
+```
 
 ## Quick start
 
 ```bash
-# Export without any MAL account — produces MAL-importer XML
-npx ani2mal export --username Jimmy123 --out ./mal-import
+# Export without any MAL account, produces MAL-importer XML
+ani2mal export --username Jimmy123 --out ./mal-import
 
 # Sync (needs MAL OAuth once)
 ani2mal config set anilist.username=Jimmy123 mal.clientId=YOUR_CLIENT_ID
@@ -43,16 +68,21 @@ ani2mal exclude list|add|rm <id>...
 
 Global options: `--config-dir <path>` `--json` `--quiet` `--verbose` `--non-interactive`
 
-## Fresh install (no migration from 2.x)
+The binaries ship with their permissions baked in: network access limited to the
+AniList and MAL hosts, file access scoped to the config dir and `--out`, and
+browser opening restricted to the platform opener (`open`, `xdg-open` or `cmd`).
 
-`ani2mal` 3.0 is a new product. If you used 2.x, install 3.0 fresh and re-run:
+## Fresh install (no migration from 2.x/3.x)
+
+`ani2mal` 4.0 ships as a self-contained binary. If you used an older npm-installed
+version, install 4.0 fresh and re-run:
 
 ```bash
 ani2mal config set anilist.username=... mal.clientId=... mal.clientSecret=...
 ani2mal login
 ```
 
-No config file is migrated — 3.0 starts clean by design.
+No config file is migrated; 4.0 starts clean by design.
 
 ## Exit codes
 
@@ -61,7 +91,14 @@ No config file is migrated — 3.0 starts clean by design.
 | 0 | Success, no-op, cancelled, --help/--version |
 | 2 | Usage, config, auth |
 | 3 | Network / API failure after retries |
-| 10 | Partial sync — some writes failed |
+| 10 | Partial sync, some writes failed |
+
+## Development
+
+```bash
+mise install        # pulls Deno via mise
+make verify         # lint → fmt → typecheck → purity → tests+coverage → build → smokes
+```
 
 ## License
 

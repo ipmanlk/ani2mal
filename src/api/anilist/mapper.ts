@@ -2,11 +2,11 @@ import {
   type AniStatus,
   computeStats,
   type FormattedMediaList,
+  malId,
   type Media,
   type MediaType,
-  malId,
   scoreOf,
-} from '../../domain/media.js'
+} from '@/domain/media.ts'
 
 interface RawEntry {
   status: string | null
@@ -62,6 +62,10 @@ export function mapAnilist(raw: RawCollection, type: MediaType): FormattedMediaL
   let skippedNoMalId = 0
   let skippedUnknownStatus = 0
   for (const list of raw.lists) {
+    // Custom and split-completed lists are extra views over entries that
+    // already sit on their real status list; counting them too would
+    // duplicate items in exports and diffs.
+    if (list.isCustomList || list.isSplitCompletedList) continue
     const bucket = list.status
       ? (toAniStatus(list.status, list.name) ?? anilistNameToStatus(list.name))
       : anilistNameToStatus(list.name)
@@ -76,8 +80,9 @@ export function mapAnilist(raw: RawCollection, type: MediaType): FormattedMediaL
         skippedUnknownStatus++
         continue
       }
-      const length =
-        type === 'anime' ? (entry.media?.episodes ?? null) : (entry.media?.chapters ?? null)
+      const length = type === 'anime'
+        ? (entry.media?.episodes ?? null)
+        : (entry.media?.chapters ?? null)
       entries.push({
         type,
         id: malId(id),
