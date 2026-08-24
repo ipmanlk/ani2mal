@@ -28,10 +28,10 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ipmanlk/ani2mal.git"
+    "url": "git+https://github.com/ipmanlk/anilist-to-mal-sync.git"
   },
   "bugs": {
-    "url": "https://github.com/ipmanlk/ani2mal/issues"
+    "url": "https://github.com/ipmanlk/anilist-to-mal-sync/issues"
   },
-  "homepage": "https://github.com/ipmanlk/ani2mal#readme"
+  "homepage": "https://github.com/ipmanlk/anilist-to-mal-sync#readme"
 }
