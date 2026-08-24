@@ -5,8 +5,6 @@
 > [Pi Agent](https://pi.dev) and [OpenCode 2](https://opencode.ai/), using the
 > models **DeepSeek V4 Pro 0813**, **GLM 5.2** and **Ox Alpha**.
 
-[![ci](https://github.com/ipmanlk/ani2mal/actions/workflows/ci.yml/badge.svg)](https://github.com/ipmanlk/ani2mal/actions/workflows/ci.yml)
-
 > Keep MyAnimeList up to date with what you watch and read on AniList.
 
 ani2mal copies your anime and manga lists from AniList to MyAnimeList: scores,

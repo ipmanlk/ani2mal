@@ -82,9 +82,13 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create "$GITHUB_REF_NAME" assets/* \
-            --title "$GITHUB_REF_NAME" \
-            --generate-notes
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            echo "Release $GITHUB_REF_NAME already exists, skipping creation."
+          else
+            gh release create "$GITHUB_REF_NAME" assets/* \
+              --title "$GITHUB_REF_NAME" \
+              --generate-notes
+          fi
       - name: Publish npm installer package
         working-directory: npm
         run: |
