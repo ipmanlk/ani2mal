@@ -1,6 +1,6 @@
 {
   "name": "ani2mal",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "description": "Keep MyAnimeList in sync with what you watch and read on AniList.",
   "license": "MIT",
   "bin": {
@@ -28,10 +28,10 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ipmanlk/anilist-to-mal-sync.git"
+    "url": "git+https://github.com/ipmanlk/ani2mal.git"
   },
   "bugs": {
-    "url": "https://github.com/ipmanlk/anilist-to-mal-sync/issues"
+    "url": "https://github.com/ipmanlk/ani2mal/issues"
   },
-  "homepage": "https://github.com/ipmanlk/anilist-to-mal-sync#readme"
+  "homepage": "https://github.com/ipmanlk/ani2mal#readme"
 }

@@ -91,17 +91,12 @@ jobs:
           fi
       - uses: actions/setup-node@v6
         with:
-          # Trusted publishing (OIDC) requires npm >= 11.5.1, which ships
-          # with Node 24; Node 22 runners bundle an npm that silently
-          # falls back to the empty NODE_AUTH_TOKEN placeholder and the
-          # registry rejects the PUT with a misleading 404.
+          # Node 24 ships npm >= 11.5.1, required for OIDC trusted publishing.
           node-version: '24'
           registry-url: 'https://registry.npmjs.org'
       - name: Publish npm installer package
         working-directory: npm
         run: |
-          # Guarantee the npm CLI supports OIDC trusted publishing.
-          npm install -g npm@latest
           VERSION="${GITHUB_REF_NAME#v}"
           node -e "
             const fs = require('fs');
