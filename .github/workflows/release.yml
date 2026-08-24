@@ -48,6 +48,7 @@ jobs:
             --target ${{ matrix.target }} \
             --allow-net=graphql.anilist.co,api.myanimelist.net,myanimelist.net \
             --allow-env --allow-read --allow-write \
+            --allow-sys=homedir \
             --allow-run=${{ matrix.opener }} \
             --output "dist/${{ matrix.asset }}" \
             src/cli/index.ts

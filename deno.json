@@ -1,6 +1,6 @@
 {
   "tasks": {
-    "run": "deno run --allow-net=graphql.anilist.co,api.myanimelist.net,myanimelist.net --allow-env --allow-read --allow-write --allow-run=xdg-open src/cli/index.ts",
+    "run": "deno run --allow-net=graphql.anilist.co,api.myanimelist.net,myanimelist.net --allow-env --allow-read --allow-write --allow-sys=homedir --allow-run=xdg-open src/cli/index.ts",
     "run:insecure": "deno run -A src/cli/index.ts",
     "check": "deno check src/cli/index.ts",
     "lint": "deno lint",
@@ -8,7 +8,7 @@
     "fmt:check": "deno fmt --check",
     "test": "deno test --allow-env --allow-read --allow-write --allow-sys",
     "test:coverage": "deno test --allow-env --allow-read --allow-write --allow-sys --coverage && deno coverage --lcov --output=coverage/lcov.info --exclude=tests/ && deno run --allow-read scripts/check-coverage.ts",
-    "compile": "mkdir -p dist && deno compile --allow-net=graphql.anilist.co,api.myanimelist.net,myanimelist.net --allow-env --allow-read --allow-write --allow-run=xdg-open --output dist/ani2mal src/cli/index.ts"
+    "compile": "mkdir -p dist && deno compile --allow-net=graphql.anilist.co,api.myanimelist.net,myanimelist.net --allow-env --allow-read --allow-write --allow-sys=homedir --allow-run=xdg-open --output dist/ani2mal src/cli/index.ts"
   },
   "imports": {
     "@/": "./src/",

@@ -1,6 +1,6 @@
 {
   "name": "ani2mal",
-  "version": "4.0.1",
+  "version": "4.0.2",
   "description": "Keep MyAnimeList in sync with what you watch and read on AniList.",
   "license": "MIT",
   "bin": {
